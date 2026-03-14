@@ -684,16 +684,17 @@ FR('wiz');
 // ═══ SHARE VIA LINK ═══
 function buildShareURL(){
   const cdName=document.getElementById('cdn').value||'My Awesome Mix';
+  // Only share playlist + name + annotations — NO art/photos (base64 makes URL too long)
   const data={
     cdName,
     playlist:PL.map(t=>({title:t.title,artist:t.artist,preview:t.preview||''})),
-    art:artDataUrl||'',
     annotations:annots
   };
   const json=JSON.stringify(data);
   const b64=btoa(unescape(encodeURIComponent(json)));
+  // Use # hash — never sent to server, avoids URI_TOO_LONG on Vercel
   const base=window.location.href.split('#')[0].split('?')[0];
-  return base+'?share='+encodeURIComponent(b64);
+  return base+'#share='+b64;
 }
 
 function openShareModal(){
@@ -709,31 +710,29 @@ function openShareModal(){
 function copyShareURL(){
   const inp=document.getElementById('shareUrlBox');
   inp.select();
-  try{
-    navigator.clipboard.writeText(inp.value).then(()=>{
-      const lbl=document.getElementById('shareCopied');
-      lbl.style.display='block';
-      setTimeout(()=>lbl.style.display='none',2500);
-    });
-  }catch(e){
+  navigator.clipboard.writeText(inp.value).then(()=>{
+    const lbl=document.getElementById('shareCopied');
+    lbl.style.display='block';
+    setTimeout(()=>lbl.style.display='none',2500);
+  }).catch(()=>{
     document.execCommand('copy');
     const lbl=document.getElementById('shareCopied');
     lbl.style.display='block';
     setTimeout(()=>lbl.style.display='none',2500);
-  }
+  });
 }
 
 function closeShareModal(){
   document.getElementById('shareModal').classList.remove('show');
 }
 
-// Load shared data from URL on page load
+// Load shared data from URL hash on page load
 function loadFromURL(){
   try{
-    const params=new URLSearchParams(window.location.search);
-    const raw=params.get('share');
-    if(!raw)return;
-    const json=decodeURIComponent(escape(atob(decodeURIComponent(raw))));
+    const hash=window.location.hash; // e.g. #share=xxxxx
+    if(!hash.startsWith('#share='))return;
+    const b64=hash.slice(7); // strip '#share='
+    const json=decodeURIComponent(escape(atob(b64)));
     const data=JSON.parse(json);
     if(data.cdName){
       document.getElementById('cdn').value=data.cdName;
@@ -744,21 +743,13 @@ function loadFromURL(){
       data.playlist.forEach(t=>PL.push({title:t.title,artist:t.artist,preview:t.preview||null,lyrics:null,loaded:false}));
       renderPL();savePL();
     }
-    if(data.art&&data.art.startsWith('data:')){
-      artDataUrl=data.art;
-      applyArtToDisc();
-      const prev=document.getElementById('artPreview');
-      prev.src=artDataUrl;prev.style.display='block';
-      document.getElementById('artZoneText').style.display='none';
-    }
     if(data.annotations&&typeof data.annotations==='object'){
       annots=data.annotations;saveAnn();renderStickyList();
     }
-    setSt('✨ Shared mix loaded!');
-    // show a toast
+    setSt('Shared mix loaded!');
     const toast=document.createElement('div');
-    toast.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#0A246A;color:white;padding:10px 18px;border-radius:4px;font-family:"Press Start 2P",monospace;font-size:8px;z-index:99999;border:2px solid #90D0FF;box-shadow:3px 3px 10px rgba(0,0,0,0.5);text-align:center;';
-    toast.textContent='✨ Shared mix loaded! Check your playlist!';
+    toast.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#0A246A;color:white;padding:10px 18px;border-radius:4px;font-family:"Press Start 2P",monospace;font-size:7px;z-index:99999;border:2px solid #90D0FF;box-shadow:3px 3px 10px rgba(0,0,0,0.5);text-align:center;line-height:2;';
+    toast.textContent='Shared mix loaded! Check your playlist.';
     document.body.appendChild(toast);
     setTimeout(()=>toast.remove(),4000);
   }catch(e){console.log('Share load error:',e);}
