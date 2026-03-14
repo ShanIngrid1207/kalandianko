@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CD Maker 2003</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Desktop background */
+  body {
+    background-image: url('background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* Desktop icons */
+  .di {
+    position: absolute;
+    width: 72px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    z-index: 5;
+  }
+  .di img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto 4px;
+    border: 2px solid transparent;
+  }
+  .di:hover img {
+    border-color: rgba(255,255,255,0.6);
+    filter: brightness(1.15);
+  }
+  .di-label {
+    color: #fff;
+    font-size: 7px;
+    font-family: 'Press Start 2P', monospace;
+    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- Desktop icons -->
+<div class="di" id="di-player" style="top:16px;left:16px;" ondblclick="OW('wplayer')">
+  <img src="cdplayer.jpg" alt="CD Player">
+  <div class="di-label">CD Player</div>
+</div>
+<div class="di" id="di-lyrics" style="top:106px;left:16px;" ondblclick="OW('wlyrics')">
+  <img src="add songs.jpg" alt="Add Songs">
+  <div class="di-label">Add Songs</div>
+</div>
+<div class="di" id="di-sticky" style="top:196px;left:16px;" ondblclick="OW('wsticky')">
+  <img src="stickynotes.jpg" alt="Sticky Notes">
+  <div class="di-label">Sticky Notes</div>
+</div>
+<div class="di" id="di-photo" style="top:286px;left:16px;" ondblclick="OW('wphoto')">
+  <img src="cdplayer.jpg" alt="Photos" style="filter:hue-rotate(120deg);">
+  <div class="di-label">My Photos</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     WIZARD WINDOW (Steps 1→2→3)
+═══════════════════════════════════════ -->
+<div class="win aw" id="wiz" style="display:flex;">
+  <div class="tb" onmousedown="DR(event,'wiz')">
+    <div class="tbl">
+      <span id="wiz-title">Step 1 of 3 — Add Songs</span>
+    </div>
+    <div class="tbbs">
+      <div class="tbb tbb-x" onclick="confirmClose()">✕</div>
+    </div>
+  </div>
+  <div class="mb">
+    <div class="mi">File</div><div class="mi">Edit</div><div class="mi">Help</div>
+  </div>
+  <div class="wb">
+    <div class="wiz-body">
+
+      <!-- Progress dots -->
+      <div class="step-dots">
+        <div class="dot active" id="dot0"></div>
+        <div class="dot" id="dot1"></div>
+        <div class="dot" id="dot2"></div>
+      </div>
+
+      <!-- ── STEP 1: ADD SONGS ── -->
+      <div class="step active" id="step0">
+        <div class="step-icon">🎵</div>
+        <div class="step-title">Add Songs to Your CD</div>
+        <div class="step-desc">Search for 3 to 5 songs to burn onto your mix CD.<br>Click a result to add it to your playlist.</div>
+
+        <div class="sr">
+          <input class="xi" id="qs" placeholder="Song title..." onkeydown="if(event.key==='Enter')DS()">
+          <input class="xi" id="qa" placeholder="Artist..." style="width:100px;" onkeydown="if(event.key==='Enter')DS()">
+          <button class="xb p" onclick="DS()">Go</button>
+        </div>
+        <div class="rl" id="rl"></div>
+
+        <div style="font-weight:bold;font-size:11px;margin-bottom:2px;">
+          Playlist <span id="plc" style="font-weight:normal;color:#666;">(0 / 5 songs)</span>
+        </div>
+        <div class="wiz-pl" id="pl">
+          <div style="padding:10px;color:#AAA;font-style:italic;text-align:center;">No songs yet — search above!</div>
+        </div>
+
+        <div class="cdn-row">
+          <label>CD Name:</label>
+          <input class="xi" id="cdn" value="My Awesome Mix" style="flex:1;" oninput="UCN()">
+        </div>
+
+        <div class="wiz-nav">
+          <button class="xb p" id="btn-next1" onclick="goStep(1)" disabled>Next → Upload Art</button>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: UPLOAD CD ART ── -->
+      <div class="step" id="step1">
+        <div class="step-icon">🖼️</div>
+        <div class="step-title">Upload Your CD Cover Art</div>
+        <div class="step-desc">Choose a PNG image to wrap around your CD.<br>This will appear on the spinning disc!</div>
+
+        <div class="art-zone" id="artZone" onclick="document.getElementById('artInput').click()">
+          <img id="artPreview" src="" alt="">
+          <div id="artZoneText">
+            <div style="font-size:28px;">📀</div>
+            <div style="font-weight:bold;margin-top:4px;">Click to browse for a PNG file</div>
+            <div style="color:#888;font-size:10px;margin-top:2px;">Or drag &amp; drop your image here</div>
+          </div>
+        </div>
+        <input type="file" id="artInput" accept=".png,image/png" style="display:none;" onchange="handleArt(event)">
+        <div id="artName" style="font-size:10px;color:#666;text-align:center;"></div>
+
+        <div class="wiz-nav">
+          <button class="xb" onclick="goStep(0)">← Back</button>
+          <button class="xb p" onclick="goStep(2)">Next → Burn CD!</button>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: BURN ── -->
+      <div class="step" id="step2">
+        <div class="step-icon" id="burnIcon"></div>
+        <div class="step-title" id="burnTitle">Ready to Burn!</div>
+        <div class="step-desc" id="burnDesc">
+          Your playlist is loaded. Click Burn CD! to start.
+        </div>
+
+        <div id="bbar-wrap" style="display:none;">
+          <div class="bbar-out"><div class="bbar-in" id="bi"></div></div>
+          <div class="bbar-lbl" id="blbl"></div>
+        </div>
+
+        <div class="wiz-nav" id="burn-nav">
+          <button class="xb" onclick="goStep(1)">Back</button>
+          <button class="xb g" id="burnBtn" onclick="startBurn()">Burn CD!</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="sbar">
+      <div class="ss" id="st1">0/5 tracks</div>
+      <div class="ss" id="st2">Ready</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CD PLAYER WINDOW
+═══════════════════════════════════════ -->
+<div class="win" id="wplayer" style="top:60px;left:480px;">
+  <div class="tb" onmousedown="DR(event,'wplayer')">
+    <div class="tbl">
+     <span id="wpt">CD Player</span>
+    </div>
+    <div class="tbbs">
+      <div class="tbb tbb-m" onclick="MW('wplayer')">–</div>
+      <div class="tbb tbb-x" onclick="CW('wplayer')">✕</div>
+    </div>
+  </div>
+  <div class="mb">
+    <div class="mi" style="color:#316AC5;font-weight:bold;">Now Playing</div>
+    <div class="mi">Library</div><div class="mi">Rip</div>
+    <div class="mi">Burn</div><div class="mi">Sync</div>
+  </div>
+  <div class="wb">
+    <div class="np-bar">
+      <div class="np-art" id="npa">No track selected</div>
+      <div class="np-sng" id="nps">—</div>
+    </div>
+    <div class="pb">
+      <div class="cd-stage">
+        <div class="cdd" id="cdd">
+          <div class="cdr" id="cdr"></div>
+          <img class="cd-art-img" id="cdArtImg" src="" alt="">
+          <div class="cd-sheen"></div>
+          <div class="cdh"></div>
+        </div>
+        <div class="cd-name-lbl" id="cdNameLbl">My Awesome Mix</div>
+      </div>
+      <div class="prev-tag">▶ 30-sec iTunes Preview</div>
+      <audio id="aud" onended="nextT()" ontimeupdate="TU()"></audio>
+    </div>
+    <div class="ctrl-strip">
+      <button class="cb" onclick="prevT()">◀◀</button>
+      <button class="cb play" id="playBtn" onclick="TP()">▶</button>
+      <button class="cb" onclick="nextT()">▶▶</button>
+      <div class="skb"><div class="skf" id="skf"></div></div>
+      <span style="color:#6688AA;font-size:12px;">🔊</span>
+      <input type="range" min="0" max="1" step="0.05" value="0.8"
+        style="width:46px;accent-color:#4488DD;"
+        oninput="document.getElementById('aud').volume=this.value">
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LYRICS WINDOW
+═══════════════════════════════════════ -->
+<div class="win" id="wlyrics" style="top:380px;left:100px;resize:both;overflow:hidden;width:300px;height:220px;min-width:200px;min-height:140px;">
+  <div class="tb" onmousedown="DR(event,'wlyrics')">
+    <div class="tbl">
+      <span id="lytTitle">Lyrics Viewer</span>
+    </div>
+    <div class="tbbs">
+      <div class="tbb tbb-m" onclick="MW('wlyrics')">–</div>
+      <div class="tbb tbb-x" onclick="CW('wlyrics')">✕</div>
+    </div>
+  </div>
+  <div class="mb"><div class="mi">File</div><div class="mi">View</div><div class="mi">Help</div></div>
+  <div class="wb" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+    <div class="lyb" id="lyb">
+      <div class="ly-empty">🎵 Select a track in the CD Player to see lyrics.<br><br><small>Click any lyric line to add a sticky note!</small></div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:2px;right:4px;font-size:11px;color:rgba(0,0,0,0.25);pointer-events:none;user-select:none;">⇲</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     STICKY NOTES WINDOW
+═══════════════════════════════════════ -->
+<div class="win" id="wsticky" style="top:380px;left:490px;resize:both;overflow:hidden;min-width:200px;min-height:160px;">
+  <div class="tb" onmousedown="DR(event,'wsticky')">
+    <div class="tbl">
+      <span>Sticky Notes</span>
+    </div>
+    <div class="tbbs">
+      <div class="tbb tbb-m" onclick="MW('wsticky')">–</div>
+      <div class="tbb tbb-x" onclick="CW('wsticky')">✕</div>
+    </div>
+  </div>
+  <div class="wb" style="flex:1;overflow:hidden;">
+    <div class="stb" id="stb">
+      <div class="ste">📌 No sticky notes yet.<br>Click a lyric line to annotate!</div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:2px;right:4px;font-size:11px;color:rgba(0,0,0,0.25);pointer-events:none;user-select:none;">⇲</div>
+</div>
+
+<!-- ANNOTATION MODAL -->
+<div class="modal-bg" id="annModal">
+  <div class="modal-win">
+    <div class="tb" style="cursor:default;">
+      <div class="tbl">📌 Add Sticky Note</div>
+      <div class="tbbs"><div class="tbb tbb-x" onclick="CA()">✕</div></div>
+    </div>
+    <div style="padding:12px;">
+      <div style="font-weight:bold;margin-bottom:3px;">Your note:</div>
+      <div id="annPrev" style="font-style:italic;color:#666;font-size:10px;margin-bottom:5px;"></div>
+      <textarea class="mta" id="annText" placeholder="What does this lyric mean to you?"></textarea>
+      <div style="font-weight:bold;margin-top:7px;margin-bottom:3px;">Sticky color:</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div class="csw pk" style="background:#FFFD82;" data-c="#FFFD82" onclick="PC(this)"></div>
+        <div class="csw" style="background:#FFD1A9;" data-c="#FFD1A9" onclick="PC(this)"></div>
+        <div class="csw" style="background:#CAFFCA;" data-c="#CAFFCA" onclick="PC(this)"></div>
+        <div class="csw" style="background:#D9B3FF;" data-c="#D9B3FF" onclick="PC(this)"></div>
+        <div class="csw" style="background:#FFB3C6;" data-c="#FFB3C6" onclick="PC(this)"></div>
+        <div class="csw" style="background:#B3EEFF;" data-c="#B3EEFF" onclick="PC(this)"></div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;">
+        <button class="xb" onclick="CA()">Cancel</button>
+        <button class="xb p" onclick="SA()">📌 Pin It!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BURN DIALOGS -->
+<div class="bd" id="bd2" style="top:160px;left:50%;transform:translateX(-50%);">
+  <div class="tb" style="cursor:default;background:var(--xp-title);">
+    <div class="tbl">BURNING IN PROGRESS</div>
+    <div class="tbbs"><div class="tbb tbb-x" onclick="cancelBurn()">x</div></div>
+  </div>
+  <div class="bdb">
+    <div id="bdt" style="line-height:1.8;font-family:'Press Start 2P',monospace;font-size:7px;color:#333;"></div>
+  </div>
+  <div class="bdbt"><button class="xb r" onclick="cancelBurn()">Cancel</button></div>
+</div>
+
+<div class="bd" id="bddone" style="top:80px;left:50%;transform:translateX(-50%);width:360px;">
+  <div class="tb" style="cursor:default;">
+    <div class="tbl">Burn Complete</div>
+    <div class="tbbs"><div class="tbb tbb-x" onclick="burnDone()">x</div></div>
+  </div>
+  <div class="bdb" style="flex-direction:column;gap:10px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:7px;line-height:2;color:#333;">
+      Your CD has been burned!<br>Add up to 3 photos to your mix (optional).
+    </div>
+    <!-- Photo upload slots -->
+    <div style="display:flex;gap:8px;justify-content:center;margin:6px 0;">
+      <div class="photo-slot" id="pslot0" onclick="triggerPhoto(0)">
+        <img id="pimg0" src="" alt="">
+        <span id="ptxt0">+ Add Photo</span>
+      </div>
+      <div class="photo-slot" id="pslot1" onclick="triggerPhoto(1)">
+        <img id="pimg1" src="" alt="">
+        <span id="ptxt1">+ Add Photo</span>
+      </div>
+      <div class="photo-slot" id="pslot2" onclick="triggerPhoto(2)">
+        <img id="pimg2" src="" alt="">
+        <span id="ptxt2">+ Add Photo</span>
+      </div>
+    </div>
+    <input type="file" id="photoInput0" accept="image/*" style="display:none;" onchange="loadPhoto(0,event)">
+    <input type="file" id="photoInput1" accept="image/*" style="display:none;" onchange="loadPhoto(1,event)">
+    <input type="file" id="photoInput2" accept="image/*" style="display:none;" onchange="loadPhoto(2,event)">
+    <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:#888;text-align:center;">Click a slot to upload. Any image format.</div>
+  </div>
+  <div class="bdbt">
+    <button class="xb" onclick="burnDone()">Skip</button>
+    <button class="xb p" onclick="burnDone()">Open CD Player</button>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-bg" id="shareModal">
+  <div class="modal-win" style="width:400px;">
+    <div class="tb" style="cursor:default;">
+      <div class="tbl">Share Your Mix</div>
+      <div class="tbbs"><div class="tbb tbb-x" onclick="closeShareModal()">x</div></div>
+    </div>
+    <div style="padding:14px;">
+      <div style="font-family:'Press Start 2P',monospace;font-size:7px;margin-bottom:10px;color:#333;line-height:2;">
+        Copy this link and send it to a friend.<br>They will get your playlist and notes.
+      </div>
+      <input type="text" id="shareUrlBox" readonly
+        style="width:100%;border:2px solid;border-color:#808080 #DFDFDF #DFDFDF #808080;background:white;padding:5px 6px;font-family:'Press Start 2P',monospace;font-size:6px;color:#000;cursor:text;"
+        onclick="this.select();" value="">
+      <div id="shareCopied" style="font-family:'Press Start 2P',monospace;font-size:7px;color:green;margin-top:6px;display:none;">Link copied!</div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;">
+        <button class="xb" onclick="closeShareModal()">Close</button>
+        <button class="xb p" onclick="copyShareURL()">Copy Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
